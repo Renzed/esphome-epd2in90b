@@ -117,7 +117,8 @@ void EPD2in15B::setup() {
   this->black_buffer_ = this->buffer_;
   this->red_buffer_   = this->buffer_ + EPD_BLACK_BUFFER_SIZE;
 
-  // White background on both planes
+  // White background: black plane all 1s (white), red plane all 0s (no red)
+  // Red plane is inverted on send: stored 0x00 → sent 0xFF → no red pixels
   memset(this->black_buffer_, 0xFF, EPD_BLACK_BUFFER_SIZE);
   memset(this->red_buffer_,   0x00, EPD_RED_BUFFER_SIZE);
 
@@ -187,11 +188,16 @@ void EPD2in15B::draw_absolute_pixel_internal(int x, int y, Color color) {
 // ── Display update ────────────────────────────────────────────────────────────
 
 void EPD2in15B::update() {
+  ESP_LOGD(TAG, "update() called, running lambda...");
+  // Reset buffers to white before running lambda
+  memset(this->black_buffer_, 0xFF, EPD_BLACK_BUFFER_SIZE);  // all white
+  memset(this->red_buffer_,   0x00, EPD_RED_BUFFER_SIZE);    // no red
   // Re-run lambda to fill framebuffers
   this->do_update_();
+  ESP_LOGD(TAG, "lambda done, sending buffers...");
+  ESP_LOGD(TAG, "black[0]=0x%02X red[0]=0x%02X", this->black_buffer_[0], this->red_buffer_[0]);
 
-  uint16_t width_bytes = EPD_WIDTH / 8;  // 20
-
+  ESP_LOGD(TAG, "Sending black plane...");
   // Send black plane (0x24): 0=black, 1=white
   this->send_command_(0x24);
   this->dc_pin_->digital_write(true);
