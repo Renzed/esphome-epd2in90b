@@ -6,9 +6,9 @@ from esphome.const import (
     CONF_DC_PIN,
     CONF_ID,
     CONF_LAMBDA,
-    CONF_PAGES,
     CONF_RESET_PIN,
     CONF_BUSY_PIN,
+    CONF_CS_PIN,
 )
 
 DEPENDENCIES = ["spi"]
@@ -19,29 +19,39 @@ EPD2in15B = epd2in15b_ns.class_(
     "EPD2in15B",
     display.DisplayBuffer,
     spi.SPIDevice,
+    cg.PollingComponent,
 )
 
-CONFIG_SCHEMA = (
+# Top-level component schema — referenced as:
+#   epd2in15b:
+#     id: my_display
+#     ...
+CONFIG_SCHEMA = cv.All(
     display.FULL_DISPLAY_SCHEMA.extend(
         {
             cv.GenerateID(): cv.declare_id(EPD2in15B),
             cv.Required(CONF_DC_PIN): pins.gpio_output_pin_schema,
+            cv.Required(CONF_CS_PIN): pins.gpio_output_pin_schema,
             cv.Optional(CONF_RESET_PIN): pins.gpio_output_pin_schema,
             cv.Optional(CONF_BUSY_PIN): pins.gpio_input_pin_schema,
         }
     )
     .extend(cv.COMPONENT_SCHEMA)
-    .extend(spi.spi_device_schema(cs_pin_required=True))
+    .extend(spi.spi_device_schema(cs_pin_required=False))
 )
 
 
 async def to_code(config):
     var = cg.new_Pvariable(config[CONF_ID])
+    await cg.register_component(var, config)
     await display.register_display(var, config)
     await spi.register_spi_device(var, config)
 
     dc_pin = await cg.gpio_pin_expression(config[CONF_DC_PIN])
     cg.add(var.set_dc_pin(dc_pin))
+
+    cs_pin = await cg.gpio_pin_expression(config[CONF_CS_PIN])
+    cg.add(var.set_cs_pin(cs_pin))
 
     if CONF_RESET_PIN in config:
         reset_pin = await cg.gpio_pin_expression(config[CONF_RESET_PIN])
