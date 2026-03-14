@@ -58,6 +58,7 @@ class EPD2in15B : public display::DisplayBuffer,
   void set_window_(uint16_t x_start, uint16_t y_start, uint16_t x_end, uint16_t y_end);
   void set_cursor_(uint16_t x, uint16_t y);
   void initialize_();
+  void clear_();
   void turn_on_display_();
 };
 

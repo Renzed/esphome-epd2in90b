@@ -77,6 +77,8 @@ void EPD2in15B::set_cursor_(uint16_t x, uint16_t y) {
 
 void EPD2in15B::turn_on_display_() {
   ESP_LOGD(TAG, "Triggering display refresh (0x20)...");
+  this->send_command_(0x21);  // Display Update Control 2
+  this->send_data_(0xF7);     // Enable clock, analog, load LUT, display, disable
   this->send_command_(0x20);  // MASTER_ACTIVATION
   this->wait_until_idle_();
   ESP_LOGD(TAG, "Display refresh complete.");
@@ -104,6 +106,33 @@ void EPD2in15B::initialize_() {
 
   this->set_cursor_(0, 0);
   this->wait_until_idle_();
+
+  // Clear display to white after init (matches Waveshare demo sequence)
+  this->clear_();
+}
+
+void EPD2in15B::clear_() {
+  // Send all-white black plane
+  this->send_command_(0x24);
+  this->dc_pin_->digital_write(true);
+  this->enable();
+  for (uint32_t i = 0; i < EPD_BLACK_BUFFER_SIZE; i++) {
+    this->write_byte(0xFF);
+    if (i % 256 == 0) App.feed_wdt();
+  }
+  this->disable();
+
+  // Send all-white red plane (0x00 stored = 0xFF sent = no red)
+  this->send_command_(0x26);
+  this->dc_pin_->digital_write(true);
+  this->enable();
+  for (uint32_t i = 0; i < EPD_RED_BUFFER_SIZE; i++) {
+    this->write_byte(0x00);
+    if (i % 256 == 0) App.feed_wdt();
+  }
+  this->disable();
+
+  this->turn_on_display_();
 }
 
 // ── ESPHome lifecycle ─────────────────────────────────────────────────────────
