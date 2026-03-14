@@ -1,0 +1,131 @@
+substitutions:
+  display_name: epd2in15b-test
+
+esphome:
+  name: epd2in15b-test
+  on_boot:
+    priority: -100
+    then:
+      - wait_until:
+          api.connected:
+      - script.execute: read_and_display
+
+esp32:
+  board: dfrobot_firebeetle2_esp32c6
+  variant: ESP32C6
+  framework:
+    type: esp-idf
+
+external_components:
+  - source:
+      type: git
+      url: https://github.com/zAAmpie/esphome-epd2in15b
+      ref: main
+    components: [epd2in15b]
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  fast_connect: true
+
+logger:
+  baud_rate: 0
+
+ota:
+  platform: esphome
+
+api:
+
+spi:
+  clk_pin: GPIO23
+  mosi_pin: GPIO22
+
+output:
+  - platform: gpio
+    pin: GPIO1
+    id: display_power
+
+switch:
+  - platform: output
+    output: display_power
+    id: display_pwr_switch
+    name: "Display Power"
+    restore_mode: ALWAYS_ON
+
+sensor:
+  - platform: adc
+    pin: GPIO0
+    name: "Battery Voltage"
+    id: battery_voltage
+    attenuation: 12db
+    update_interval: never
+    accuracy_decimals: 2
+    samples: 30
+    unit_of_measurement: "V"
+    device_class: voltage
+    state_class: measurement
+    filters:
+      - multiply: 2.0
+
+font:
+  - file: "gfonts://Roboto"
+    id: font_large
+    size: 32
+  - file: "gfonts://Roboto"
+    id: font_small
+    size: 16
+
+display:
+  - platform: epd2in15b
+    id: epaper
+    cs_pin: GPIO19
+    dc_pin: GPIO20
+    reset_pin: GPIO18
+    busy_pin: GPIO14
+    update_interval: never
+    lambda: |-
+      it.fill(Color::WHITE);
+
+      if (id(battery_voltage).has_state()) {
+        char buf[32];
+
+        snprintf(buf, sizeof(buf), "%.2fV", id(battery_voltage).state);
+        it.print(
+          it.get_width() / 2,
+          it.get_height() / 2 - 20,
+          id(font_large),
+          Color::BLACK,
+          TextAlign::CENTER,
+          buf
+        );
+
+        float pct = (id(battery_voltage).state - 3.0f) / (4.2f - 3.0f) * 100.0f;
+        if (pct > 100) pct = 100;
+        if (pct < 0)   pct = 0;
+        snprintf(buf, sizeof(buf), "%.0f%%", pct);
+        it.print(
+          it.get_width() / 2,
+          it.get_height() / 2 + 20,
+          id(font_small),
+          Color::BLACK,
+          TextAlign::CENTER,
+          buf
+        );
+      } else {
+        it.print(10, 10, id(font_small), Color::BLACK, "Reading...");
+      }
+
+deep_sleep:
+  id: deep_sleep_ctrl
+  sleep_duration: 3min
+
+script:
+  - id: read_and_display
+    then:
+      - component.update: battery_voltage
+      - delay: 2s
+      - component.update: epaper
+      - delay: 20s
+      - switch.turn_off: display_pwr_switch
+      - deep_sleep.enter:
+          id: deep_sleep_ctrl
