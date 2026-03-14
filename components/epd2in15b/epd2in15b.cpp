@@ -7,8 +7,6 @@ namespace epd2in15b {
 
 static const char *const TAG = "epd2in15b";
 
-// ── Low-level SPI helpers ──────────────────────────────────────────────────────
-
 void EPD2in15B::send_command_(uint8_t cmd) {
   this->dc_pin_->digital_write(false);
   this->enable();
@@ -44,7 +42,7 @@ void EPD2in15B::set_cursor_(uint16_t x, uint16_t y) {
 
 bool EPD2in15B::is_busy_() {
   if (this->busy_pin_ == nullptr) return false;
-  return this->busy_pin_->digital_read();  // HIGH = busy
+  return this->busy_pin_->digital_read();
 }
 
 void EPD2in15B::transition_(EPDState next, uint32_t delay_ms) {
@@ -62,10 +60,7 @@ void EPD2in15B::do_reset_() {
   }
 }
 
-// ── ESPHome lifecycle ──────────────────────────────────────────────────────────
-
 void EPD2in15B::setup() {
-  // Buffer must be allocated first
   this->init_internal_(EPD_BLACK_BUFFER_SIZE + EPD_RED_BUFFER_SIZE);
   if (this->buffer_ == nullptr) {
     ESP_LOGE(TAG, "Failed to allocate display buffer!");
@@ -77,7 +72,6 @@ void EPD2in15B::setup() {
   memset(this->black_buffer_, 0xFF, EPD_BLACK_BUFFER_SIZE);
   memset(this->red_buffer_,   0x00, EPD_RED_BUFFER_SIZE);
 
-  // Pins
   this->dc_pin_->setup();
   this->dc_pin_->digital_write(false);
 
@@ -94,27 +88,23 @@ void EPD2in15B::setup() {
   }
 
   this->spi_setup();
-
-  // Begin non-blocking init sequence
   this->do_reset_();
   this->transition_(EPDState::INIT_WAIT_BUSY, 200);
 }
 
 void EPD2in15B::loop() {
-  // Respect deadline before advancing state
   if (millis() < this->state_deadline_ms_) return;
 
   switch (this->state_) {
 
     case EPDState::INIT_WAIT_BUSY:
-      if (this->is_busy_()) return;  // wait
-      this->send_command_(0x12);     // SWRESET
+      if (this->is_busy_()) return;
+      this->send_command_(0x12);  // SWRESET
       this->transition_(EPDState::INIT_SWRESET_WAIT, 10);
       break;
 
     case EPDState::INIT_SWRESET_WAIT:
       if (this->is_busy_()) return;
-      // Send init registers
       this->send_command_(0x11);
       this->send_data_(0x03);
       this->set_window_(0, 0, EPD_WIDTH - 1, EPD_HEIGHT - 1);
@@ -126,50 +116,38 @@ void EPD2in15B::loop() {
       this->send_data_(0x00);
       this->send_data_(0x80);
       this->set_cursor_(0, 0);
-      this->transition_(EPDState::IDLE, 0);
-      ESP_LOGD(TAG, "Display init complete.");
-      // If an update was requested during init, start it now
       if (this->update_pending_) {
         this->update_pending_ = false;
         this->transition_(EPDState::UPDATE_SEND_DATA, 0);
+      } else {
+        this->transition_(EPDState::IDLE, 0);
       }
       break;
 
-    case EPDState::UPDATE_SEND_DATA: {
-      ESP_LOGD(TAG, "Sending frame data...");
+    case EPDState::UPDATE_SEND_DATA:
       this->set_cursor_(0, 0);
-
-      // Black plane
       this->send_command_(0x24);
       this->dc_pin_->digital_write(true);
       this->enable();
-      for (uint32_t i = 0; i < EPD_BLACK_BUFFER_SIZE; i++) {
+      for (uint32_t i = 0; i < EPD_BLACK_BUFFER_SIZE; i++)
         this->write_byte(this->black_buffer_[i]);
-      }
       this->disable();
-
-      // Red plane
       this->send_command_(0x26);
       this->dc_pin_->digital_write(true);
       this->enable();
-      for (uint32_t i = 0; i < EPD_RED_BUFFER_SIZE; i++) {
+      for (uint32_t i = 0; i < EPD_RED_BUFFER_SIZE; i++)
         this->write_byte(this->red_buffer_[i]);
-      }
       this->disable();
-
       this->transition_(EPDState::UPDATE_ACTIVATE, 0);
       break;
-    }
 
     case EPDState::UPDATE_ACTIVATE:
-      ESP_LOGD(TAG, "Activating display refresh...");
       this->send_command_(0x20);
       this->transition_(EPDState::UPDATE_WAIT_BUSY, 50);
       break;
 
     case EPDState::UPDATE_WAIT_BUSY:
-      if (this->is_busy_()) return;  // wait for refresh to complete
-      ESP_LOGD(TAG, "Display refresh complete.");
+      if (this->is_busy_()) return;
       this->transition_(EPDState::IDLE, 0);
       break;
 
@@ -180,15 +158,12 @@ void EPD2in15B::loop() {
 }
 
 void EPD2in15B::update() {
-  // Fill framebuffers from lambda
   memset(this->black_buffer_, 0xFF, EPD_BLACK_BUFFER_SIZE);
   memset(this->red_buffer_,   0x00, EPD_RED_BUFFER_SIZE);
   this->do_update_();
 
   if (this->state_ != EPDState::IDLE) {
-    // Still initialising — queue the update
     this->update_pending_ = true;
-    ESP_LOGD(TAG, "Update queued (init in progress).");
     return;
   }
   this->transition_(EPDState::UPDATE_SEND_DATA, 0);
@@ -203,8 +178,6 @@ void EPD2in15B::dump_config() {
   LOG_PIN("  PWR Pin: ", this->pwr_pin_);
 }
 
-// ── Pixel drawing ──────────────────────────────────────────────────────────────
-
 void EPD2in15B::draw_absolute_pixel_internal(int x, int y, Color color) {
   if (this->black_buffer_ == nullptr || this->red_buffer_ == nullptr) return;
   if (x < 0 || x >= EPD_WIDTH || y < 0 || y >= EPD_HEIGHT) return;
@@ -213,15 +186,12 @@ void EPD2in15B::draw_absolute_pixel_internal(int x, int y, Color color) {
   uint8_t  bit_mask = 0x80 >> (x % 8);
 
   if (color.r > 200 && color.g < 100 && color.b < 100) {
-    // Red
     this->black_buffer_[byte_idx] |= bit_mask;
     this->red_buffer_[byte_idx]   |= bit_mask;
   } else if (color.r < 50 && color.g < 50 && color.b < 50) {
-    // Black
     this->black_buffer_[byte_idx] &= ~bit_mask;
     this->red_buffer_[byte_idx]   &= ~bit_mask;
   } else {
-    // White
     this->black_buffer_[byte_idx] |= bit_mask;
     this->red_buffer_[byte_idx]   &= ~bit_mask;
   }
