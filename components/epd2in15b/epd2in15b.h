@@ -23,6 +23,7 @@ class EPD2in15B : public display::DisplayBuffer,
                                         spi::DATA_RATE_2MHZ> {
  public:
   void set_dc_pin(GPIOPin *dc)     { dc_pin_ = dc; }
+  void set_cs_pin(GPIOPin *cs)     { cs_pin_ = cs; }
   void set_reset_pin(GPIOPin *rst) { reset_pin_ = rst; }
   void set_busy_pin(GPIOPin *busy) { busy_pin_ = busy; }
 
@@ -43,11 +44,12 @@ class EPD2in15B : public display::DisplayBuffer,
   uint8_t *red_buffer_{nullptr};
 
   GPIOPin *dc_pin_{nullptr};
+  GPIOPin *cs_pin_{nullptr};
   GPIOPin *reset_pin_{nullptr};
   GPIOPin *busy_pin_{nullptr};
 
   void draw_absolute_pixel_internal(int x, int y, Color color) override;
-  size_t get_buffer_length_() override { return EPD_BLACK_BUFFER_SIZE + EPD_RED_BUFFER_SIZE; }
+  size_t get_buffer_length_() { return EPD_BLACK_BUFFER_SIZE + EPD_RED_BUFFER_SIZE; }
 
   void reset_();
   void wait_until_idle_();
