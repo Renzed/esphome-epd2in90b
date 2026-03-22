@@ -7,7 +7,7 @@
 namespace esphome {
 namespace epd2in15b {
 
-static const uint16_t EPD_WIDTH  = 160;
+static const uint16_t EPD_WIDTH  = 128;
 static const uint16_t EPD_HEIGHT = 296;
 static const uint32_t EPD_BLACK_BUFFER_SIZE = (EPD_WIDTH / 8) * EPD_HEIGHT;
 static const uint32_t EPD_RED_BUFFER_SIZE   = (EPD_WIDTH / 8) * EPD_HEIGHT;
