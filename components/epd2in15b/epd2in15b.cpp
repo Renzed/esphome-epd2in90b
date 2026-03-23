@@ -200,10 +200,10 @@ void EPD2in15B::draw_absolute_pixel_internal(int x, int y, Color color) {
     this->red_buffer_[byte_idx]   &= ~bit_mask;
   } else if (color.r < 50 && color.g < 50 && color.b < 50) {
     this->black_buffer_[byte_idx] |= bit_mask;
-    this->red_buffer_[byte_idx]   |= bit_mask;
+    this->red_buffer_[byte_idx]   &= ~bit_mask;
   } else {
     this->black_buffer_[byte_idx] &= ~bit_mask;
-    this->red_buffer_[byte_idx]   |= bit_mask;
+    this->red_buffer_[byte_idx]   &= ~bit_mask;
   }
 }
 
