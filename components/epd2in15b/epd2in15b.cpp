@@ -185,15 +185,25 @@ void EPD2in15B::draw_absolute_pixel_internal(int x, int y, Color color) {
   uint32_t byte_idx = (x / 8) + y * (EPD_WIDTH / 8);
   uint8_t  bit_mask = 0x80 >> (x % 8);
 
+  // if (color.r > 200 && color.g < 100 && color.b < 100) {
+  //   this->black_buffer_[byte_idx] |= bit_mask;
+  //   this->red_buffer_[byte_idx]   |= bit_mask;
+  // } else if (color.r < 50 && color.g < 50 && color.b < 50) {
+  //   this->black_buffer_[byte_idx] &= ~bit_mask;
+  //   this->red_buffer_[byte_idx]   &= ~bit_mask;
+  // } else {
+  //   this->black_buffer_[byte_idx] |= bit_mask;
+  //   this->red_buffer_[byte_idx]   &= ~bit_mask;
+  // }
   if (color.r > 200 && color.g < 100 && color.b < 100) {
     this->black_buffer_[byte_idx] |= bit_mask;
-    this->red_buffer_[byte_idx]   |= bit_mask;
+    this->red_buffer_[byte_idx]   &= ~bit_mask;
   } else if (color.r < 50 && color.g < 50 && color.b < 50) {
-    this->black_buffer_[byte_idx] &= ~bit_mask;
-    this->red_buffer_[byte_idx]   &= ~bit_mask;
-  } else {
     this->black_buffer_[byte_idx] |= bit_mask;
-    this->red_buffer_[byte_idx]   &= ~bit_mask;
+    this->red_buffer_[byte_idx]   |= bit_mask;
+  } else {
+    this->black_buffer_[byte_idx] &= ~bit_mask;
+    this->red_buffer_[byte_idx]   |= bit_mask;
   }
 }
 
