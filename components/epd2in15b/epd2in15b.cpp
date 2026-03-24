@@ -200,7 +200,7 @@ void EPD2in15B::draw_absolute_pixel_internal(int x, int y, Color color) {
     //ESP_LOGD("Display","Trying to write red");
     this->black_buffer_[byte_idx] &= ~bit_mask;
     this->red_buffer_[byte_idx]   |= bit_mask;
-  } else if (color.r < 50 && color.g < 50 && color.b < 50) {
+  } else if (color.r > 250 && color.g > 250 && color.b > 250) {
     this->black_buffer_[byte_idx] |= bit_mask;
     this->red_buffer_[byte_idx]   &= ~bit_mask;
   } else {
