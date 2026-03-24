@@ -161,6 +161,7 @@ void EPD2in15B::update() {
   memset(this->black_buffer_, 0xFF, EPD_BLACK_BUFFER_SIZE);
   memset(this->red_buffer_,   0x00, EPD_RED_BUFFER_SIZE);
   this->do_update_();
+  ESP_LOGD(TAG,"test");
 
   if (this->state_ != EPDState::IDLE) {
     this->update_pending_ = true;
@@ -195,9 +196,9 @@ void EPD2in15B::draw_absolute_pixel_internal(int x, int y, Color color) {
   //   this->black_buffer_[byte_idx] |= bit_mask;
   //   this->red_buffer_[byte_idx]   &= ~bit_mask;
   // }
-  char col_buf[14];
-  snprintf(col_buf, 14, "r%d g%d b%d", color.r, color.g, color.b);
-  ESP_LOGD(TAG,col_buf);
+  //char col_buf[14];
+  //snprintf(col_buf, 14, "r%d g%d b%d", color.r, color.g, color.b);
+  //ESP_LOGD(TAG,col_buf);
   if (color.r > 200 && color.g < 100 && color.b < 100) {
     ESP_LOGD("Display","Trying to write red");
     this->black_buffer_[byte_idx] &= ~bit_mask;
