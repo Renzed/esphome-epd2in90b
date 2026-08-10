@@ -143,7 +143,7 @@ void EPD2in15B::loop() {
 
     case EPDState::UPDATE_ACTIVATE:
       this->send_command_(0x20);
-      this->transition_(EPDState::UPDATE_WAIT_BUSY, 50);
+      this->transition_(EPDState::UPDATE_WAIT_BUSY, 25);
       break;
 
     case EPDState::UPDATE_WAIT_BUSY:
@@ -161,7 +161,7 @@ void EPD2in15B::update() {
   memset(this->black_buffer_, 0xFF, EPD_BLACK_BUFFER_SIZE);
   memset(this->red_buffer_,   0x00, EPD_RED_BUFFER_SIZE);
   this->do_update_();
-  ESP_LOGD(TAG,"test");
+  ESP_LOGD(TAG,"test2");
 
   if (this->state_ != EPDState::IDLE) {
     this->update_pending_ = true;
