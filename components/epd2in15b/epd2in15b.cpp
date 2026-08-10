@@ -89,7 +89,7 @@ void EPD2in15B::setup() {
 
   this->spi_setup();
   this->do_reset_();
-  this->transition_(EPDState::INIT_WAIT_BUSY, 200);
+  this->transition_(EPDState::INIT_WAIT_BUSY, 2);
 }
 
 void EPD2in15B::loop() {
