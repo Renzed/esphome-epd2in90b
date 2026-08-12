@@ -201,3 +201,4 @@ Color(255,0,0) // red pixel
 
 - The display takes approximately 15–20 seconds for a full tri-color refresh. This is normal for red/black/white e-ink panels.
 - For battery-powered use, add a `delay: 20s` after `component.update: epaper` before entering deep sleep to allow the refresh to complete.
+- The SPI data rate is set to 40MHz, 80 caused slight artifacting in my setup, but my cables were a bit long. You can try 80, but it won't noticeably decrease the refresh time.
