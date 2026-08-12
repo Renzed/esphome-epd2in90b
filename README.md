@@ -1,4 +1,4 @@
-# esphome-epd2in15b
+# esphome-epd2in90b
 
 ESPHome external component for the **ZHONGJINGYUAN 2.9inch e-Paper display** — a 128×296 tri-color (black/white/red) e-ink display.
 This is adapted from [https://github.com/zAAmpie/esphome-epd2in15b]
