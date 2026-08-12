@@ -43,7 +43,7 @@ external_components:
 ```
 
 ## Full example YAML
-
+This example is for an air quality monitor with the [Sensirion SEN66-SIN-T](https://www.tinytronics.nl/nl/sensoren/lucht/vochtigheid/sensirion-sen66-sin-t-omgevingssensor-fijnstof-luchtvochtigheid-temperatuur-co2-voc-nox) communicating with the ESP32 over I²C.
 ```yaml
 esphome:
   name: luchtkwaliteit--sen66
